@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MiniHome TV</string>
+    <string name="loading">Yükleniyor…</string>
+    <string name="playing">Yayında</string>
+    <string name="recovering">Yeniden deneniyor…</string>
+    <string name="unavailable_short">Yayın yok</string>
+    <string name="unavailable">Yayın şu an kullanılamıyor\nOK → kanal listesi</string>
+    <string name="offline">İnternet bağlantısı yok\nBağlantı gelince otomatik denenecek</string>
+    <string name="no_channels">Kanal listesi okunamadı</string>
+    <string name="no_such_channel">Kanal %1$d yok</string>
+</resources>
