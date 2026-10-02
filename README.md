@@ -114,6 +114,70 @@ adb install -r app-debug.apk
 
 Uygulama TV'nin uygulama listesinde **MiniHome TV** adıyla görünür. Android TV ana ekranında banner'ı da vardır.
 
+### Biz nasıl kurup test ettik
+
+Uygulamayı geliştirirken önce bir emülatörde, sonra gerçek bir projeksiyonda (HAVIT PJ205 PRO, Android 9) kablosuz adb ile kurduk ve test ettik. Aynı adımları kendi TV'nde izleyebilirsin:
+
+1. **TV'de ağ üzerinden hata ayıklamayı aç.** Geliştirici seçeneklerinde **USB hata ayıklama** ve varsa **Ağ üzerinden hata ayıklama** seçeneğini etkinleştir. Bilgisayar ve TV aynı ağda olmalı.
+2. **TV'yi bul.** IP adresini bilmiyorsan adb yerel ağda arayabilir. Çıktıda `192.168.1.65:5555` gibi bir adres görünür:
+
+   ```bash
+   adb mdns services
+   ```
+
+3. **Bağlan.** İlk bağlantıda TV ekranında "Hata ayıklamaya izin verilsin mi?" sorusu çıkar, kumandayla onayla:
+
+   ```bash
+   adb connect 192.168.1.65:5555
+   ```
+
+4. **Kur ve aç:**
+
+   ```bash
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+   ```bash
+   adb shell am start -n com.minihome.tv/.MainActivity
+   ```
+
+5. **Oynadığını logdan doğrula.** Pek çok TV, videoyu ayrı bir donanım katmanında çizdiği için `screencap` ile ekran görüntüsü alınamaz. Bu yüzden oynatmayı logdan takip ettik. `PLAYING` satırı görüntünün geldiğini gösterir:
+
+   ```bash
+   adb logcat -s PlayerController
+   ```
+
+   ```text
+   I PlayerController: TRT 1: LOADING
+   I PlayerController: TRT 1: PLAYING
+   ```
+
+6. **Senaryo testlerini çalıştır.** Birden fazla cihaz bağlıysa önce hedefi seç, sonra testleri çalıştır. Hangi testlerin ne yaptığı [Test](#test) bölümünde:
+
+   ```bash
+   export ANDROID_SERIAL=192.168.1.65:5555
+   ```
+
+   ```bash
+   tools/smoke.sh all
+   ```
+
+Decoder sızıntısı olup olmadığını görmek için hızlı kanal değiştirdikten sonra şu komuta bakabilirsin. Uygulamanın satırında tek bir `video-codec` görünmeli:
+
+```bash
+adb shell dumpsys media.resource_manager
+```
+
+İpuçları:
+
+- **Kumandayı test et:** Testlerde kumanda tuşlarını adb ile gönderdik (`adb shell input keyevent DPAD_UP`). Ama gerçek kumandayı da mutlaka dene. Air-mouse kumandalar adb'nin gönderemediği fare olayları üretiyor; kanal listesindeki bir hatayı ancak gerçek kumandayla bulabildik.
+- **Cihazı adb ile yeniden başlatma:** Bazı projeksiyon cihazları `adb reboot` komutunda yeniden başlamak yerine tamamen kapanıyor. Bizim test cihazımızda da böyle oldu, cihazı elle açmak gerekti.
+- **İnternet testi:** TV'ye Wi-Fi üzerinden adb ile bağlıysan `tools/smoke.sh net` testi adb bağlantısını da keser. Biz Wi-Fi'yi kapatıp 45 sn sonra açan komutu TV'nin kendi içinde arka planda çalıştırdık, sonra yeniden bağlanıp logları okuduk:
+
+  ```bash
+  adb shell "nohup sh -c 'sleep 2; svc wifi disable; sleep 45; svc wifi enable' >/dev/null 2>&1 &"
+  ```
+
 ### Kaynaktan derleme
 
 Gereksinimler: **JDK 17+** (21 ile denendi) ve **Android SDK 36**. Gradle wrapper, Gradle 9.8.0'ı kendisi indirir. AGP 9.4.1 kullanılıyor.
